@@ -1,4 +1,4 @@
-# PortablePython4Windows
+# [PortablePython4Windows](https://github.com/heindrickson/PortablePython4Windows)
 A bunch of scripts to help create a portable installation of Python and create and use virtual environments in it (everything PORTABLE) 
 <br><br>
 
@@ -7,8 +7,8 @@ Because other portable solutions are less flexible, especially for developers wh
 <br><br>
 
 # Features  
-- install multiple Python versions in the same portable folder
-- create virtual environments bound to any Python version added to the portable folder
+- install multiple Python versions in the same PORTABLE folder
+- create virtual environments bound to any Python version added to the PORTABLE folder
 - activate any virtual environment and open and use its 'console'
 - install/remove pip packages in any virtual environment
 - complete isolation between your PORTABLE virtual environments and any Python installation on the local computer. Additionally, you will be notified by a white-on-green message each time you run python.exe after activating a PORTABLE environment, preventing any confusion with the local Python installation
@@ -33,6 +33,8 @@ Because other portable solutions are less flexible, especially for developers wh
 **Optional 2**: You can rename/move your 'base' PORTABLE folder to another 'path' if you wish. After that, the first time you run the 'ACTIVATE_CONSOLE-for-env.cmd' script, you'll be warned to execute the script 'RECONFIGURE-env.cmd', to adjust the virtual environment's 'pyenv.cfg' and some other files. The same thing will happen with the other virtual environments, so it might be easier to adjust ALL of them at once by running the 'Reconfigure-ALL-envs.cmd' script :)
 
 **Optional 3**: You can activate and use your PORTABLE virtual environments in VSCode. Just drag and drop some source code folder onto the 'RUN_VSCODE_with_Envs.cmd' script and follow the instructions on the screen.
+
+**Optional 4**: After running the script for the first time, a shortcut named 'PyWinCMD - Activate_CONSOLE-for-env' will be created. You can use this shortcut to launch the [PywinCMD](https://github.com/tagwato/PyWinCMD) tool if the target computer where you intend to use your PORTABLE Python has restrictions on using the native CMD.
 <br><br>
 
 # License
