@@ -16,19 +16,19 @@ Because other portable solutions are less flexible, especially for developers wh
 <br><br>
 
 # How to use
-**Step 1** : Download this repository and extract in any folder (may be a removable USB pendrive). That will be the 'base' PORTABLE folder
+**Step 1** : Download this repository and extract in any folder (may be a removable USB device/pen drive). That will be the 'base' PORTABLE folder
 
-**Step 2** : Run the 'ADD_Portable_Python_version.cmd' script, to add a Python version to the PORTABLE folder
+**Step 2** : Run the 'ADD_Portable_Python_version.cmd' script, to add a Python version to the 'base' PORTABLE folder
 
-**Step 3** : If you skipped the creation of a virtual environment at the final stages of the previous script, then run the 'CREATE_or_REcreate-env.cmd' script to have one created
+**Step 3** : If you skipped the creation of a virtual environment at the final stages of the previous script, then run the 'CREATE_or_REcreate-env.cmd' script and create a virtual environment
 
-**Step 4** : Now you can run the 'ACTIVATE_CONSOLE-for-env.cmd' script to activate the environment you wish, open its console and do what you like
+**Step 4** : Now you can run the 'ACTIVATE_CONSOLE-for-env.cmd' script to activate the environment you wish, open its console and do what you like (install packages, code/test/run python programs etc)
 
-**Step 5** : Repeat steps 2 to 4 to install other Python verions and create more virtual environments, if you want
+**Step 5** : Repeat steps 2 to 4 to install other Python versions and create more virtual environments, if you want
 
-**Step 6** (optional): If your 'base' PORTABLE folder is in a plugged device, you can plug it in any computer and use it there. If the mapped device (Drive) is different there, then the situation will be the same as in Step 7
+**Step 6** (optional): If your 'base' PORTABLE folder is on a pluggable device, then you can plug it into any computer and use it there. If the mapped device (Drive) is different in that computer, then the situation will be the same as in Step 7
 
-**Step 7** (optional): You can rename/move your 'base' PORTABLE folder to another 'path' if you wish. The first time you try to activate a virtual environment, you'll be warned to execute the script 'RECONFIGURE-env.cmd', to adjust its 'pyenv.cfg' and some other files.
+**Step 7** (optional): You can rename/move your 'base' PORTABLE folder to another 'path' if you wish. After that, the first time you try to activate a virtual environment you'll be warned to execute the script 'RECONFIGURE-env.cmd', to adjust the virtual environment's 'pyenv.cfg' and some other files.
 <br><br>
 
 # License
