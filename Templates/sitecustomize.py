@@ -19,7 +19,7 @@
 
 
 # CHANGE the below flag if you want to DEBUG this script execution
-debugging = False
+debugging_this_code = False
 
 
 import os
@@ -69,8 +69,8 @@ RST_CLR =  "\x1b[0m"   #<<---- this DOES NOT reset bold, italic, blink, but ther
 
 
 
-def debug(s):
-    if debugging:
+def dbg(s):
+    if  debugging_this_code:
         print(s)
 
 
@@ -122,7 +122,7 @@ def ensure_console_supports_ANSI_RGB():
     #End-of console_supports_vt()
 
     supported, mode = console_supports_vt()
-    debug(f"VT processing enabled? = {mode!r} ==> {supported}")
+    dbg(f"VT processing enabled? = {mode!r} ==> {supported}")
     
     # NOW ensure the ENABLE_VIRTUAL_TERMINAL_PROCESSING flag is SET
     h = GetStdHandle(STD_OUTPUT_HANDLE)
@@ -133,7 +133,7 @@ def ensure_console_supports_ANSI_RGB():
             print(ctypes.WinError(ctypes.get_last_error()))
             
     supported, mode = console_supports_vt()
-    debug(f"VT processing enabled? = {mode!r} ==> {supported}")
+    dbg(f"VT processing enabled? = {mode!r} ==> {supported}")
 
 
     
@@ -143,6 +143,17 @@ def has_file(path, file):
         return True
     else:
         return False
+        
+        
+def is_python_debugging_mode():
+    # Check typical debugging partial strings:
+    for arg in sys.argv:
+        if 'debugpy' in arg or '.vscode' in arg:
+            return True
+    # Check typical debugging variables used by VSCode:
+    if 'VSCODE_CWD' in os.environ or 'DEBUGPY_RUN_PROG' in os.environ:
+        return True
+    return False        
     
 
 # --- FUNCTION TO GET THE BASE python.exe PATH (outside of virtual envs) ---
@@ -173,12 +184,12 @@ def get_base_path():
         bg_color = BG_LGRAY
     else: 
         bg_color = BG_YELLOW
-    debug(FG_BLACK + bg_color  + " This 'sitecustomize.py' is running from: " + str(base_path) + RST_CLR)
+    dbg(FG_BLACK + bg_color  + " This 'sitecustomize.py' is running from: " + str(base_path) + RST_CLR)
     return (base_path, cfg_exists)
 # ----------------------------------------
 
 
-debug ("Executing 'sitecustomize.py'...")
+dbg( "Executing 'sitecustomize.py'...")
 
 # If 'Windows Terminal' is NOT set as the default terminal application, then the common  
 # CMD console is used, which does NOT support ANSI-RGB by default. Let's enable it. 
@@ -188,10 +199,13 @@ base_path, cfg_exists = get_base_path()
 exe_path = os.path.dirname(sys.executable)
 
 
-if  cfg_exists:
-    print(FG_WHITE + BG_DGREEN  + "*** PORTABLE Python *** at virtual environm.: " + exe_path + RST_CLR)
-else:
-    print(FG_WHITE + BG_DPURPLE + "*** PORTABLE Python *** at the 'base' folder: " + exe_path + RST_CLR)
+# The VSCode debugging mechanism puts a folder in syspath with some known substrings OR set env. variables
+# If we put messages in the python console output AND python is in debugging mode, it fails inside VSCode 
+if not is_python_debugging_mode():
+    if  cfg_exists:
+        print(FG_WHITE + BG_DGREEN  + "*** PORTABLE Python *** at virtual environm.: " + exe_path + RST_CLR)
+    else:
+        print(FG_WHITE + BG_DPURPLE + "*** PORTABLE Python *** at the 'base' folder: " + exe_path + RST_CLR)
 
 
 # Presents 'locale' and 'console codepage'; it is important for the user to know what is active upon startup.
@@ -211,27 +225,27 @@ except Exception as e:
 # Q - So, when doing file I/O in Python, is there no need to specify 'encoding'? 
 # A - You might need to, because cp-1252 is 'ANSI', this is NOT UTF-8... WHEREAS python literals generated in VScode/Notepad++ are UTF-8.
 from locale import getlocale
-debug(f"Op. System 'locale' at startup: {FG_YELLOW}{getlocale()}{RST_CLR} <<== This defines the DEFAULT encoding of I/O done IN python!")
-debug(f"Op. System console 'codepage' at startup: {FG_YELLOW}{current_codepage}{RST_CLR} <<== This defines the encoding of I/O done ONLY ON the Console")
+dbg(f"Op. System 'locale' at startup: {FG_YELLOW}{getlocale()}{RST_CLR} <<== This defines the DEFAULT encoding of I/O done IN python!")
+dbg(f"Op. System console 'codepage' at startup: {FG_YELLOW}{current_codepage}{RST_CLR} <<== This defines the encoding of I/O done ONLY ON the Console")
 
-debug("base_path: " + str(base_path))
+dbg("base_path: " + str(base_path))
 
 if base_path:
 
     portable_folder = str(base_path.parent)
-    debug("portable_folder: " + portable_folder)
+    dbg("portable_folder: " + portable_folder)
 
 
     # 1. Identify the host computer's User Site-Packages directory
     host_user_site = site.getusersitepackages()
-    debug("Host_user_site (will be disabled while running the PORTABLE site): " + host_user_site)
+    dbg("Host_user_site (will be disabled while running the PORTABLE site): " + host_user_site)
 
     # 2. Remove it from sys.path if the bug caused it to leak in
     if host_user_site in sys.path:
-        debug("    Removed from sys.path")
+        dbg("    Removed from sys.path")
         sys.path.remove(host_user_site)
     else:
-        debug("    Not in sys.path")
+        dbg("    Not in sys.path")
 
     # 3. Disable the feature so it cannot be called later
     site.ENABLE_USER_SITE = False
@@ -248,14 +262,16 @@ if base_path:
     # so we scrub sys.path to only allow paths that physically reside inside our PORTABLE installation.
     clean_path = []
     for p in sys.path:
-        # Keep the path if it belongs to the portable folder
-        if p.startswith(portable_folder)  or p == '.' or p == '.\\':
-            debug("Keeping: " + p)
+        # Keep the path if it belongs to the portable folder OR if python is beeing called from VSCode debugger:
+        # PS - The VSCode debugging mechanism puts a folder in syspath that is NOT in the PORTABLE 'base'
+        #      If we remove that folder, then debugging *.py source code inside VSCode will fail.      
+        if (portable_folder.lower() in  p.lower() or p == '.' or p == '.\\' 
+            or '.vscode' in p.lower() or 'debugpy' in p.lower()):
+            dbg("Keeping: " + p)
             clean_path.append(p)
         else:
-            debug("EXCLUDED: " + p)
+            dbg("EXCLUDED: " + p)
     sys.path = clean_path
-
 
     # The steps above suffice for the python.exe at the BASE portable folder (outside of virtual envs). 
     # BUT NOT for the python.exe called when a virtual-environment IS activated !
@@ -267,42 +283,42 @@ if base_path:
         # The below guarantees that the Python "tkinter" module (Lib/tkinter/__init__.py) is found.
         base_lib_path = base_path / 'Lib'
         if base_lib_path.is_dir():
-            debug("base_lib_path: " + str(base_lib_path))
+            dbg("base_lib_path: " + str(base_lib_path))
             sys.path.insert(0,str(base_lib_path))
         # The below guarantees that the DLLs/_tkinter.pyd file is found.
         base_dlls_path = base_path / 'DLLs'  
         if base_dlls_path.is_dir():
-            debug("base_dlls_path: " + str(base_dlls_path))
+            dbg("base_dlls_path: " + str(base_dlls_path))
             sys.path.insert(0,str(base_dlls_path))   
         # The below guarantees that the tcl/tk*.lib and tcl*.lib files are found.
         base_tcl_path = base_path / 'tcl'  
         if base_tcl_path.is_dir():
-            debug("base_tcl_path: " + str(base_tcl_path))
+            dbg("base_tcl_path: " + str(base_tcl_path))
             sys.path.insert(0,str(base_tcl_path))           
         
         # 5. Configure Tcl/Tk environment variables
         tcl_path = base_path / 'tcl'
         if not tcl_path.is_dir():  # if it doesn't find tcl in Base, tries in Base/Lib
             tcl_path = base_path / 'Lib' / 'tcl'
-        debug("tcl_path: " + str(tcl_path))        
+        dbg("tcl_path: " + str(tcl_path))        
         if tcl_path.is_dir():
             tcl_subfolder = next((f for f in tcl_path.iterdir() if f.name.startswith('tcl') 
                                 and "." in f.name and f.is_dir() and has_file(f, "init.tcl")), None)
             tk_subfolder = next((f for f in tcl_path.iterdir() if f.name.startswith('tk') 
                                 and "." in f.name and f.is_dir() and has_file(f, "tk.tcl")), None)
-            debug("tcl_subfolder: " + str(tcl_subfolder))        
-            debug("tk_subfolder: " + str(tk_subfolder))        
+            dbg("tcl_subfolder: " + str(tcl_subfolder))        
+            dbg("tk_subfolder: " + str(tk_subfolder))        
             
             if tcl_subfolder and tcl_subfolder.is_dir():
                 os.environ['TCL_LIBRARY'] = str(tcl_subfolder)
-                debug('TCL_LIBRARY set to ' + str(tcl_subfolder))
+                dbg('TCL_LIBRARY set to ' + str(tcl_subfolder))
             else:
-                debug('Could NOT set TCL_LIBRARY :(')         
+                dbg('Could NOT set TCL_LIBRARY :(')         
                                             
             if tk_subfolder and tk_subfolder.is_dir():
                 os.environ['TK_LIBRARY'] = str(tk_subfolder)
-                debug('TK_LIBRARY set to ' + str(tk_subfolder))
+                dbg('TK_LIBRARY set to ' + str(tk_subfolder))
             else:
-                debug('Could NOT set TK_LIBRARY :(')         
+                dbg('Could NOT set TK_LIBRARY :(')         
             
-debug("End of sitecustomize.py")
+dbg("End of sitecustomize.py")
