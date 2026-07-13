@@ -1,0 +1,9 @@
+# When the python.exe from a virtual environment is executed, then any _pth file
+# located inside the environment's Lib\site-packages folder well ALSO be 'loaded'.
+# This can be used to set up the virtual env or to perform checkings.
+# But *._pth files does NOT behave like *.py files, we can only put folders paths
+# here AND one final 'import' statement.
+# So, because we need to run python code, we put here only the import statement
+# pointing to the python code we actually want to run, which is 'env_startup.py'
+
+import env_startup    #<--- run 'env_startup.py'
