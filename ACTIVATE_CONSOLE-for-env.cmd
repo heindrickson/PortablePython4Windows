@@ -20,6 +20,22 @@ setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_NAME_WITH_PATH=%~f0"
 
+@REM The call to powershell MUST be executed with de default CHCP active (before activating 65001/UTF-8)...
+@REM otherwise the console fonts 'shrink' (if not using 'Windows Terminal') due to another quirk Windows bug :(
+
+@REM Update the *.cmd path and the icon path in the shortcut that launches PyWincmd, if it exists.
+@REM This ensures the icon is displayed correctly if the PORTABLE installation folder has been moved.
+if exist "%SCRIPT_DIR%\PyWinCMD\images\PWC_128x128.ico" (
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+        "$ws = New-Object -ComObject WScript.Shell; " ^
+        "$s = $ws.CreateShortcut(\"$env:SCRIPT_DIR\PyWinCMD - Activate_CONSOLE-for-env.lnk\"); " ^
+        "$s.Arguments = 'pWc'; " ^
+        "$s.TargetPath = \"$env:SCRIPT_NAME_WITH_PATH\"; " ^
+        "$s.WorkingDirectory = \"$env:SCRIPT_DIR\"; " ^
+        "$s.IconLocation = \"$env:SCRIPT_DIR\PyWinCMD\images\PWC_128x128.ico\"; " ^
+        "$s.Save();"
+)
+
 @rem set GETCPCMD=powershell -NoProfile -Command "[Console]::OutputEncoding.CodePage"
 @rem set ARGSFOR=tokens=*
 set GETCPCMD=chcp
@@ -29,19 +45,6 @@ echo Original console encoding/codepage: %OLD_CP%
 @rem Change to UTF-8 codepage:
 chcp 65001
 echo.
-
-@REM Update the *.cmd path and the icon path in the shortcut that launches PyWincmd, if it exists.
-@REM This ensures the icon is displayed correctly if the PORTABLE installation folder has been moved.
-if exist "%SCRIPT_DIR%\PyWinCMD\images\PWC_128x128.ico" (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-        "$ws = New-Object -ComObject WScript.Shell; " ^
-        "$s = $ws.CreateShortcut('%SCRIPT_DIR%\PyWinCMD - Activate_CONSOLE-for-env.lnk'); " ^
-        "$s.Arguments = 'pWc'; " ^
-        "$s.TargetPath = '%SCRIPT_NAME_WITH_PATH%'; " ^
-        "$s.WorkingDirectory = '%SCRIPT_DIR%'; " ^
-        "$s.IconLocation = '%SCRIPT_DIR%\PyWinCMD\images\PWC_128x128.ico'; " ^
-        "$s.Save();"
-)
 
 @REM Ensures it is running in the location where this script is located
 cd /D "%SCRIPT_DIR%" 
@@ -80,6 +83,7 @@ REM (UTF-8 code page 65001 MUST be active while reading it so that the
 REM  test below works correctly, because last_path.txt is ALWAYS created/edited in UTF-8)
 chcp 65001 >nul
 set /p last_path=<last_path.txt
+
 if "%last_path%" EQU "%cd%" (
     goto CONTINUA1
 )

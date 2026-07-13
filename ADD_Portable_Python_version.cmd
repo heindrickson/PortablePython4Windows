@@ -53,6 +53,9 @@ echo Exiting without installing anything...
 goto FIM
 
 :INSTALA
+@REM Return to OLD_CP to avoid Windows bug that 'shrinks' font if codepage is 65001/utf-8 and powershell 
+@REM is called inside ( ) - We can do that because the %env variables% content are codepage 'agnostic'
+chcp %OLD_CP% >nul
 powershell -File ADD_Portable_Python_version.ps1 -version %PYT_VRS%
 if %ERRORLEVEL% equ 0 goto FIM
 
