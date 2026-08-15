@@ -4,7 +4,7 @@
 #
 # Q - What are we doing here?
 # A  we are just configuring the use of tkinter (tcl/tk) in the environment (or outside of it), 
-#     so that, WHEN the necessary folders are in the 'main' python (base_path)
+#     so that, WHEN the necessary folders are in the 'main' python (under the 'base_path' 
 #     of our PORTABLE installation (in the python-X.YY.Z-embed-amd64 subfolder)
 #     then these folders will be placed in the python PATH by the mechanisms used here
 #     and tkinter will be 'seen' in the virtual environment as well, and not just 
@@ -12,7 +12,7 @@
 #   
 # (*) for example, under the .\myenv\Lib\site-packages\ environment
 #     PS:  'sitecustomize.py' does NOT need to be copied to EACH virtual-environment, it is only 
-#           required in each 'python-X.YY.Z-embed-amd64' subfolder at the 'base' of the PORTABLE installation.
+#           required in each 'python-X.YY.Z-embed-amd64' subfolder at the 'base_path' of the PORTABLE installation.
 #           CAUTION... if a 'sitecustomize.py' is found in the environment Lib\site-packages, it 'shadows' 
 #           (overwrites) the file 'sitecustomize.py' placed at the Python folder in the 'base_path'.
 #           So, to customize a virtual environment, we use the 'Env-startup.pth' in the env Lib\site-packages      
@@ -156,36 +156,43 @@ def is_python_debugging_mode():
     return False        
     
 
-# --- FUNCTION TO GET THE BASE python.exe PATH (outside of virtual envs) ---
-def get_base_path():
+# --- FUNCTION TO GET THE python.exe PATH (outside or inside virtual envs) ---
+def get_base_base_python_path():
     """Reads and returns the base path (home) of the embedded environment in the venv's pyvenv.cfg file."""
     # (It contains the path of the BASE python executable, e.g.: C:\PORTABLEPYTHON4WINDOWS\python-3.13.8-embed-amd64)
     # ----------------------------------------
-    # If there is no 'pyenv.cfg', we assume it is the python.exe at the base path of the PORTABLE folder (not a virtual env)
-    base_path = Path(sys.prefix)
+    base_python_path = Path(sys.prefix)
     cfg_exists = False
-    cfg_file = base_path / 'pyvenv.cfg'
+    cfg_file = base_python_path / 'pyvenv.cfg'
     if cfg_file.exists(): 
         cfg_exists = True
-        home_found=False
+        home_key_found=False
 #        with open(cfg_file, 'r') as f:
         # By default, python's 'open()' function uses the NATIVE OS codepage, usually "cp-1252" on Windows...
         # but we know the CFG is generated in UTF-8, so we must TELL python to "treat" it as UTF-8! 
         with open(cfg_file, 'r', encoding='utf-8-sig') as f:  
             for line in f:
+                line = line.lower().strip()
                 if line.startswith('home ='):
-                    base_path = Path(line.split('=')[1].strip())
-                    if not os.path.exists(base_path):
-                        raise FileExistsError(FG_RED + BG_BLACK + "ERROR - The directory set in the 'home' entry of the activated virtual pyenv.cfg file does NOT exist." + RST_CLR)
-                    home_found = True
-            if not home_found:            
-                raise FileExistsError("ERROR - The pyenv.cfg file of the activated virtual environment does not have the 'home' entry.")
+                    home_key_found = True
+                    base_python_path =  Path(line.replace('home =', '').strip())
+                elif line.startswith('home='):
+                    home_key_found = True
+                    base_python_path =  Path(line.replace('home=', '').strip())
+
+        if not home_key_found:            
+            raise FileExistsError("ERROR - The pyenv.cfg file of the activated virtual environment does not have the 'home' entry.")
+
+        if not os.path.exists(base_python_path):
+            raise FileExistsError(FG_RED + BG_BLACK + "ERROR - The directory set in the 'home' entry of the activated virtual pyenv.cfg file does NOT exist." + RST_CLR)
+
+    # If there is no 'pyenv.cfg', we assume it is running the Python installed at the base path of the PORTABLE folder (not a virtual env)
     if cfg_exists:
         bg_color = BG_LGRAY
     else: 
         bg_color = BG_YELLOW
-    dbg(FG_BLACK + bg_color  + " This 'sitecustomize.py' is running from: " + str(base_path) + RST_CLR)
-    return (base_path, cfg_exists)
+    dbg(FG_BLACK + bg_color  + " This 'sitecustomize.py' is running from: " + str(base_python_path) + RST_CLR)
+    return (base_python_path, cfg_exists)
 # ----------------------------------------
 
 
@@ -195,7 +202,7 @@ dbg( "Executing 'sitecustomize.py'...")
 # CMD console is used, which does NOT support ANSI-RGB by default. Let's enable it. 
 ensure_console_supports_ANSI_RGB()
 
-base_path, cfg_exists = get_base_path()
+base_python_path, cfg_exists = get_base_base_python_path()
 exe_path = os.path.dirname(sys.executable)
 
 
@@ -203,9 +210,9 @@ exe_path = os.path.dirname(sys.executable)
 # If we put messages in the python console output AND python is in debugging mode, it fails inside VSCode 
 if not is_python_debugging_mode():
     if  cfg_exists:
-        print(FG_WHITE + BG_DGREEN  + "*** PORTABLE Python *** at virtual environm.: " + exe_path + RST_CLR)
+        print(FG_WHITE + BG_DGREEN  + "*** PORTABLE Python *** using virtual environm.: " + exe_path + RST_CLR)
     else:
-        print(FG_WHITE + BG_DPURPLE + "*** PORTABLE Python *** at the 'base' folder: " + exe_path + RST_CLR)
+        print(FG_WHITE + BG_DPURPLE + "*** PORTABLE Python *** using the 'base' folder: " + exe_path + RST_CLR)
 
 
 # Presents 'locale' and 'console codepage'; it is important for the user to know what is active upon startup.
@@ -228,11 +235,11 @@ from locale import getlocale
 dbg(f"Op. System 'locale' at startup: {FG_YELLOW}{getlocale()}{RST_CLR} <<== This defines the DEFAULT encoding of I/O done IN python!")
 dbg(f"Op. System console 'codepage' at startup: {FG_YELLOW}{current_codepage}{RST_CLR} <<== This defines the encoding of I/O done ONLY ON the Console")
 
-dbg("base_path: " + str(base_path))
+dbg("base_python_path: " + str(base_python_path))
 
-if base_path:
+if base_python_path:
 
-    portable_folder = str(base_path.parent)
+    portable_folder = str(base_python_path.parent)
     dbg("portable_folder: " + portable_folder)
 
 
@@ -281,25 +288,25 @@ if base_path:
 
         # 4. Add the 'main' python (BASE python) folders to sys.path, as they are necessary for tkinter.
         # The below guarantees that the Python "tkinter" module (Lib/tkinter/__init__.py) is found.
-        base_lib_path = base_path / 'Lib'
+        base_lib_path = base_python_path / 'Lib'
         if base_lib_path.is_dir():
             dbg("base_lib_path: " + str(base_lib_path))
             sys.path.insert(0,str(base_lib_path))
         # The below guarantees that the DLLs/_tkinter.pyd file is found.
-        base_dlls_path = base_path / 'DLLs'  
+        base_dlls_path = base_python_path / 'DLLs'  
         if base_dlls_path.is_dir():
             dbg("base_dlls_path: " + str(base_dlls_path))
             sys.path.insert(0,str(base_dlls_path))   
         # The below guarantees that the tcl/tk*.lib and tcl*.lib files are found.
-        base_tcl_path = base_path / 'tcl'  
+        base_tcl_path = base_python_path / 'tcl'  
         if base_tcl_path.is_dir():
             dbg("base_tcl_path: " + str(base_tcl_path))
             sys.path.insert(0,str(base_tcl_path))           
         
         # 5. Configure Tcl/Tk environment variables
-        tcl_path = base_path / 'tcl'
+        tcl_path = base_python_path / 'tcl'
         if not tcl_path.is_dir():  # if it doesn't find tcl in Base, tries in Base/Lib
-            tcl_path = base_path / 'Lib' / 'tcl'
+            tcl_path = base_python_path / 'Lib' / 'tcl'
         dbg("tcl_path: " + str(tcl_path))        
         if tcl_path.is_dir():
             tcl_subfolder = next((f for f in tcl_path.iterdir() if f.name.startswith('tcl') 

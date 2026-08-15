@@ -20,6 +20,9 @@ setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_NAME_WITH_PATH=%~f0"
 
+:: Trick to get the ESC character to be used with ANSI escape codes
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
 @rem set GETCPCMD=powershell -NoProfile -Command "[Console]::OutputEncoding.CodePage"
 @rem set ARGSFOR=tokens=*
 set GETCPCMD=chcp
@@ -31,8 +34,8 @@ chcp 65001
 echo.
 
 @REM Ensures it is running in the location where this script is located
-cd %SCRIPT_DIR% 
-echo Current working folder/directory: %CD%
+cd "%SCRIPT_DIR%" 
+echo Current working folder/directory: "%CD%"
 echo.
 
 set "ENVS_DIR=%SCRIPT_DIR%Envs"
@@ -40,7 +43,7 @@ set "ENVS_DIR=%SCRIPT_DIR%Envs"
 rem Check if the ENVS_DIR folder exists
 if not exist "%ENVS_DIR%" (
     echo.
-    echo The folder "%ENVS_DIR%" was not found! Exiting...
+    echo %ESC%[31mERROR %ESC%[0m- The folder "%ENVS_DIR%" was not found! Exiting...
     exit /b 1
 )
 
@@ -56,8 +59,8 @@ for /D %%D in ("%ENVS_DIR%\*") do (
     @REM     ------ IMPORTANT -----
     @REM Ensure that the files 'env_startup.*' which are in the 'templates' folder of our
     @REM our portable installationthe 'base' folder exist in the Lib\site-packages of the virtual env !
-    @echo Executing:   cmd.exe /C copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%ENVS_DIR%\%%~nxD\Lib\site-packages" 
-    cmd.exe /C copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%ENVS_DIR%\%%~nxD\Lib\site-packages"
+    @echo Executing:  copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%ENVS_DIR%\%%~nxD\Lib\site-packages" 
+    copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%ENVS_DIR%\%%~nxD\Lib\site-packages"
 )
 
 echo.
@@ -71,8 +74,8 @@ echo.
 @REM ... But first let's ensures output is ALWAYS in UTF-8/65001, for eventual non-ASCII characters 
 @REM in the path, since this file can be edited by other scripts or manually in UTF-8 (and it will be)
 chcp 65001 >nul
-@echo Saving in 'last_path.txt' %CD% as the 'base' folder of this PORTABLE installation.
-@echo %CD%>last_path.txt
+@echo Saving in 'last_path.txt' "%CD%" as the base folder of this PORTABLE installation.
+@echo "%CD%">last_path.txt
 
 :FIM
 echo.

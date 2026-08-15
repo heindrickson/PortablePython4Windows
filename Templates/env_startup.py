@@ -1,27 +1,31 @@
 
-
 import sys
 import os
 
 
 def _check_base_python(env_root_path):
     cfg_exists = False
+    home_key_found=False
+    base_python_found=False
+    base_python_path=''
     cfg_file = env_root_path + '\\' + 'pyVEnv.cfg'
     if os.path.exists(cfg_file):  
         cfg_exists = True
-        home_key_found=False
-        base_python_exists=False
         # By default, python's 'open()' function uses the NATIVE OS codepage, usually "cp-1252" on Windows...
         # but we know the CFG is generated in UTF-8, so we must TELL python to "treat" it as UTF-8! 
         with open(cfg_file, 'r', encoding='utf-8-sig') as f:  
             for line in f:
                 line = line.lower().strip()
-                if line.startswith('home =') or line.startswith('home='):
+                if line.startswith('home ='):
                     home_key_found = True
-                    base_python_path = line.split('=')[1].strip()
-                    if os.path.exists(base_python_path):
-                       base_python_exists = True
-    return (cfg_exists, home_key_found, base_python_path, base_python_exists)
+                    base_python_path = line.replace('home =', '').strip()
+                elif line.startswith('home='):
+                    home_key_found = True
+                    base_python_path = line.replace('home=', '').strip()
+
+            if home_key_found and os.path.exists(base_python_path):
+               base_python_found = True
+    return (cfg_exists, home_key_found, base_python_path, base_python_found)
 
 
 # Get the virtual environment root folder:
@@ -132,12 +136,12 @@ if not base_python_exists:
 
     if not cfg_exists:
         print(FG_RED + BG_BLACK  + 
-f'''CAUTION - The 'pyenv.cfg' file for this virtual environment was not found in:
+f'''CAUTION - The 'pyenv.cfg' file for this virtual environment was not found at:
           {env_root_path} 
         ''' +  RST_CLR)
     elif not base_python_exists:
         print(FG_RED + BG_BLACK  + 
-f'''CAUTION - The 'base' folder of the Python version associated with this virtual environment was not found at:
+f'''CAUTION - The Python folder associated with this virtual environment in 'pyenv.cfg' was not found at:
           {base_python_path} ''' +  RST_CLR)
         
     print(FG_YELLOW + BG_BLACK  + "The use of this virtual environment is NOT advisable!")

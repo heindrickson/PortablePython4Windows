@@ -27,7 +27,6 @@ echo Original console encoding/codepage: %OLD_CP%
 chcp 65001
 echo.
 
-
 :GET_VRS
 echo Check the available Python versions at: https://www.python.org/downloads/windows/
 set /p "PYT_VRS=Please enter the Python version to install in this PORTABLE folder (e.g.: 3.13.14): "
@@ -37,12 +36,12 @@ if "%PYT_VRS%"=="" goto GET_VRS
 REM Ensures it is running in the location where this script is located
 cd "%~dp0" 
 echo.
-echo Current working folder/directory: %CD%
+echo Current working folder/directory: "%CD%"
 
 echo.
 echo ATTENTION - The chosen Python version is: %PYT_VRS%
 echo             If that version exists, the installer will be downloaded and Python will be 
-echo             installed in '%CD%' 
+echo             installed in "%CD%" 
 echo             This will overwrite any same version Python already installed in such folder.
 echo. 
 set /p "TECLA=Enter 'S' to start the installation or ANY OTHER key to abort: "
@@ -56,12 +55,10 @@ goto FIM
 @REM Return to OLD_CP to avoid Windows bug that 'shrinks' font if codepage is 65001/utf-8 and powershell 
 @REM is called inside ( ) - We can do that because the %env variables% content are codepage 'agnostic'
 chcp %OLD_CP% >nul
-powershell -File ADD_Portable_Python_version.ps1 -version %PYT_VRS%
-if %ERRORLEVEL% equ 0 goto FIM
-
-pause
+powershell -ExecutionPolicy Bypass -WindowStyle Normal -File ADD_Portable_Python_version.ps1 -version %PYT_VRS%
 
 :FIM 
 @echo Restoring the previous codepage...
 @chcp %OLD_CP%
+pause
 exit /b

@@ -31,8 +31,8 @@ chcp 65001
 echo.
 
 @REM Ensures it is running in the location where this script is located
-cd %SCRIPT_DIR% 
-echo Current working folder/directory: %CD%
+cd "%SCRIPT_DIR%" 
+echo Current working folder/directory: "%CD%"
 echo.
 
 call Menu_subdirs.cmd "%SCRIPT_DIR%Envs" "Select a virtual environment"
@@ -42,14 +42,14 @@ if [%MENU_SELECTED_SUBDIR%]==[] (goto FIM) else (set "_ENV_=%MENU_SELECTED_SUBDI
 set "THE_ENV_DIR=%SCRIPT_DIR%Envs\%_ENV_%"
 
 @echo Executing:   powershell -File RECONFIGURE-env.ps1 "%_ENV_%"
-powershell -File RECONFIGURE-env.ps1 "%_ENV_%"
+powershell -ExecutionPolicy Bypass -WindowStyle Normal -File RECONFIGURE-env.ps1 "%_ENV_%"
 if %errorlevel% NEQ 0 (echo ======    ERROR executing 'RECONFIGURE-env.ps1' & goto FIM) 
 
 @REM     ------ IMPORTANT -----
 @REM We should ALWAYS copy the files 'env_startup.*' that are in the 'templates' folder 
 @REM of base path of our portable installation to the environment's Lib\site-packages folder !
-@echo Executing:   cmd.exe /C copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\site-packages" 
-cmd.exe /C copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\site-packages"
+@echo Executing:  copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\site-packages" 
+copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\site-packages"
 
 @REM Each virtual environment keeps in its configuration file the path where it was created.
 @REM When such virtual environment folder is moved, it usually will NOT work anymore.
@@ -61,7 +61,7 @@ cmd.exe /C copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\sit
 @REM in the path, since this file can be edited by other scripts or manually in UTF-8 (and it will be)
 chcp 65001 >nul
 @echo Saving in 'last_path.txt' the current path of this PORTABLE installation.
-@echo %CD%>last_path.txt
+@echo "%CD%">last_path.txt
 
 
 :FIM

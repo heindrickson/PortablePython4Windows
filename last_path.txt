@@ -1,1 +1,1 @@
-C:\PORTABLE_PYTHON
+"C:\PortablePython4Windows-1.0.2"

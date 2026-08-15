@@ -40,7 +40,11 @@ cd /D "%SCRIPT_DIR%"
 set "MENU_SELECTED_SUBDIR="
 
 :: Uses the received parameter as the target folder, or uses the folder where this script is located
-:: PS ==>   %1 includes the received surrounding quotes;    %~1 removes the surrounding quotes.
+:: PS ==>  %1 includes the received surrounding quotes;    %~1 removes the surrounding quotes (what we need)
+:: PS2-->  In case the folder has '^' in the name, then using %~1 will also automatically DUPLICATE 
+::         the escapes: '^' => '^^'. This is a BAD thing, because the TARGET_FOLDER below would 
+::         be set with an invalid path/foldername.  
+:: =====>  We are NOT going to handle such weird behaviors here, so please do NOT use '^' in folder names !
 if "%~1"=="" (
     set "TARGET_FOLDER=%SCRIPT_DIR%"
 ) else (
@@ -62,7 +66,7 @@ if "%~3"=="" (
 set /a counter=0
 
 echo ==============================================================
-echo MENU FOR %TARGET_FOLDER% (filter: %FILTER%)
+echo MENU FOR "%TARGET_FOLDER%" (filter: %FILTER%)
 echo ==============================================================
 :: The 'for /d' command iterates through SUBdirectories only.
 :: %%~nxF gets the Name and eXtension of the subfolder (ignoring the full path)
@@ -71,14 +75,14 @@ for /d %%F in ("%TARGET_FOLDER%\%FILTER%") do (
     :: Stores the subdir name in a dynamic variable (e.g.: subdir_1, subdir_2...)
     set "subdir_!counter!=%%~nxF"
    :: Displays the option on the screen
-   echo !counter! - %%~nxF
+   echo !counter! - "%%~nxF"
 )
 echo X - Abort the selection
 
 :: Checks whether any subdir was found
 if %counter%==0 (
     echo.
-    echo No subdirectory matched the filter in "%TARGET_FOLDER%".
+    echo No subdirectory matched the filter '%FILTER%' in "%TARGET_FOLDER%".
     pause
     exit /b
 )
@@ -100,7 +104,7 @@ set "selected_subdir=!subdir_%option%!"
 
 echo.
 echo -------------------------------------
-echo You selected: %selected_subdir%
+echo You selected: "%selected_subdir%"
 echo -------------------------------------   
 goto FIM
 

@@ -33,7 +33,7 @@ echo Original console encoding/codepage: %OLD_CP%
 chcp 65001
 echo.
 
-:: Trick to get the ESC character for ANSI escape codes
+:: Trick to get the ESC character to be used with ANSI escape codes
 for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
 
 @rem Get the name of the virtual environment to create or use the name set in parameter 1
@@ -55,8 +55,8 @@ echo -------------------------------------
 echo.
 
 @REM Ensures it is running in the location where this script is located
-cd %SCRIPT_DIR% 
-echo Current working folder/directory: %CD%
+cd /D "%SCRIPT_DIR%" 
+echo Current working folder/directory: "%CD%"
 
 set "THE_ENV_DIR=%SCRIPT_DIR%Envs\%_ENV_%"
 
@@ -71,6 +71,13 @@ if "%PYTHON_FOLDER:~,1%"==" " (echo Invalid python folder & goto GETPYTHON) else
 @REM Select one of the python folders that is located at the 'base' folder of our PORTABLE installation
 @REM PS - those python folders are generated ONLY after running the 
 :GETPYTHON
+
+for /D %%d in ("%SCRIPT_DIR%\python*embed*amd*") do goto SEGUE0
+echo %ESC%[31mERROR %ESC%[0m- No Python version found under "%SCRIPT_DIR%".
+echo Please, run 'ADD_Portable_Python_version.cmd' before running this script
+goto FIM
+
+:SEGUE0
 call Menu_subdirs.cmd "%SCRIPT_DIR%" "Select a python version to use in the new environment" "python*embed*amd*"
 if "%MENU_SELECTED_SUBDIR%"=="" (
     @rem If empty, the user aborted the selection
@@ -82,15 +89,15 @@ if "%MENU_SELECTED_SUBDIR%"=="" (
 :SEGUE1
 @echo off
 if  defined PYTHON_FOLDER if exist "%PYTHON_FOLDER%\python.exe" goto SEGUE2
-echo ERROR - There is no python folder or python.exe was not found in it: %PYTHON_FOLDER%
+echo %ESC%[31mERROR %ESC%[0m- There is no python folder or python.exe was not found in it: %PYTHON_FOLDER%
 SET "RET_CODE=888" & goto FIM
 
 :SEGUE2
-echo Found python.exe in: %PYTHON_FOLDER%
+echo Found python.exe in: "%PYTHON_FOLDER%"
 echo.
 
 echo A virtual environment named %ESC%[30m%ESC%[103m '%_ENV_%' %ESC%[0m will be created (or recreated) and 
-echo it will be associated to this python version: %ESC%[30m%ESC%[103m '%PYTHON_FOLDER%' %ESC%[0m. 
+echo it will be associated to this python version: %ESC%[30m%ESC%[103m "%PYTHON_FOLDER%" %ESC%[0m. 
 echo If a '%_ENV_%_requirements.txt' file exists, it will be used to install 
 echo libraries into the new created environment.
 echo.
@@ -107,7 +114,7 @@ if exist "%THE_ENV_DIR%" rmdir /S /Q "%THE_ENV_DIR%"
 
 @echo.
 @echo Creating the virtual environment with name '%_ENV_%', please wait...
-"%PYTHON_FOLDER%\python.exe" -m virtualenv "%THE_ENV_DIR%" > nul
+"%PYTHON_FOLDER%\python.exe" -m virtualenv "%THE_ENV_DIR%" 
 
 @REM     ------ IMPORTANT -----
 @REM We should ALWAYS copy the files 'env_startup.*' that are in the 'templates' folder 
@@ -117,7 +124,7 @@ cmd.exe /C copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\sit
 
 @REM Tests if the newly created %_ENV_% environment is actually working
 if not exist "%THE_ENV_DIR%\Scripts\python.exe" (
-    @echo ERROR - python.exe was not found in %THE_ENV_DIR%\Scripts
+    @echo %ESC%[31mERROR %ESC%[0m- python.exe was not found in %THE_ENV_DIR%\Scripts
     @echo The virtual environment '%_ENV_%' was NOT created correctly :(   Execution canceled!
     set "RET_CODE=888" & goto FIM
 )
@@ -126,7 +133,7 @@ if not exist "%THE_ENV_DIR%\Scripts\python.exe" (
 @REM  upon RETURNING to this console;  that is what we want):
 call "%THE_ENV_DIR%\Scripts\activate.bat"
 if "%VIRTUAL_ENV%" NEQ "%THE_ENV_DIR%" (
-    @echo ERROR - When trying to activate the %_ENV_% environment with "%THE_ENV_DIR%\Scripts\activate.bat" 
+    @echo %ESC%[31mERROR %ESC%[0m- When trying to activate the %_ENV_% environment with "%THE_ENV_DIR%\Scripts\activate.bat" 
     @echo The virtualenv '%_ENV_%' was NOT created correctly :[   Execution canceled!
     set "RET_CODE=888" & goto FIM
 )
@@ -148,7 +155,7 @@ python --version
 @REM in the path, since this file can be edited by other scripts or manually in UTF-8 (and it will be)
 chcp 65001 >nul
 @echo Saving in 'last_path.txt' the current path of this PORTABLE installation.
-@echo %CD%>last_path.txt
+@echo "%CD%">last_path.txt
 
 @echo.
 @echo Installing required libraries...
@@ -156,7 +163,7 @@ chcp 65001 >nul
 @REM At this point the %_ENV_% environment IS STILL activated,  so typing 'python' ALWAYS targets the correct one 
 if exist "%_ENV_%_requirements.txt"  (
     python -m pip install -r "%_ENV_%_requirements.txt" || (
-        echo ERROR installing libraries from '%_ENV_%_requirements.txt' into '%_ENV_%'... Aborted! 
+        echo %ESC%[31mERROR %ESC%[0m- installing libraries from '%_ENV_%_requirements.txt' into '%_ENV_%'... Aborted! 
         set "RET_CODE=888" & goto FIM
     )
 ) 
@@ -173,6 +180,7 @@ python -m pip list
 @echo.
 
 :FIM
+@echo.
 @echo Restoring the previous codepage...
 @chcp %OLD_CP% >nul
 @pause
