@@ -1,9 +1,9 @@
 # [PortablePython4Windows](https://github.com/heindrickson/PortablePython4Windows)
-A bunch of scripts to help create a portable installation of Python and create and use virtual environments in it (everything PORTABLE) 
+A bunch of scripts to help create a portable installation of Python and create and use virtual environments and programs in it (everything PORTABLE). 
 <br><br>
 
 # Why?
-Because other portable solutions are less flexible, especially for developers who need to work with multiple Python versions, use virtual environments, and want to easily move everything from one computer to another. 
+Because other portable solutions are less transparent and less flexible, especially for developers who need to work with multiple Python versions, use virtual environments, and want to easily move everything from one computer to another. 
 <br><br>
 
 # Features  
@@ -11,7 +11,8 @@ Because other portable solutions are less flexible, especially for developers wh
 - create virtual environments bound to any Python version added to the PORTABLE folder
 - activate any virtual environment and open and use its 'console'
 - install/remove pip packages in any virtual environment
-- complete isolation between your PORTABLE virtual environments and any Python installation on the local computer. Additionally, you will be notified by a white-on-green message each time you run python.exe after activating a PORTABLE environment, preventing any confusion with the local Python installation
+- run/test/debug Python programs in any portable virtual environment 
+- ensure complete isolation between your PORTABLE virtual environments and any Python installation on the local computer. Additionally, you will be notified by a white-on-green message each time you run python.exe after activating a PORTABLE environment, preventing any confusion with the local Python installation
 - distribute Python programs in a completely open manner
 - and, of course, move the entire portable folder to other locations or to other computers
 <br><br>
@@ -28,7 +29,7 @@ Because other portable solutions are less flexible, especially for developers wh
 **Step 5** : Repeat steps 2 to 4 to install other Python versions and create more virtual environments, if you want.
 
 ### Optional actions
-**Optional 1**: If your 'base' PORTABLE folder is on a pluggable device, then you can plug it into any computer and use it there. If the mapped device (Drive) is different in that computer, then the situation will be the same as in Optional 2.
+**Optional 1**: If your 'base' PORTABLE folder is on a pluggable device, then you can plug it into any computer and use it there. If the mapped device/drive letter is different in that computer, then the situation will be the same as in Optional 2.
 
 **Optional 2**: You can move your 'base' PORTABLE folder (or rename it) if you want. After that, the first time you run the 'ACTIVATE_CONSOLE-for-env.cmd' script, you'll be warned to execute the script 'RECONFIGURE-env.cmd', to adjust the virtual environment's 'pyenv.cfg' and some other files. The same thing will happen with the other virtual environments, so it might be easier to adjust ALL of them at once by running the 'Reconfigure-ALL-envs.cmd' script :)
 
@@ -37,13 +38,13 @@ Because other portable solutions are less flexible, especially for developers wh
 
 # Using a PORTABLE virtual environment within VSCode 
 You can activate and use your PORTABLE virtual environments in VSCode.  
-To do this, ensure that VS Code is installed on the computer OR install the portable version of VSCode via the script 'Install_Portable_VSCode (optional).cmd' (to learn more about portable VSCode, see: https://code.visualstudio.com/docs/setup/portable).  
+To do this, ensure that VS Code is installed on the computer OR install the portable version of VSCode via the script 'Install_Portable_VSCode (optional).cmd'. Learn more about portable VSCode at: https://code.visualstudio.com/docs/setup/portable.  
 
-Then, complete steps 1 to 4 describe in the section 'How to use' above, that is: download the FULL zip package from this repository, unzip it, add a python version and create at least one virtual environment (e.g., 'myenv').  
+Then, complete steps 1 to 4 described in the section 'How to use' above, that is: download the FULL zip package from this repository, unzip it, add a python version and create at least one virtual environment (e.g., 'myenv').  
 You can now drag and drop any folder containing source code onto the 'RUN_VSCODE_with_Portable_Envs.cmd' script.  
 VSCode will be launched and the source code folder will become the current working folder.  
 
-To activate your virtual environment in VSCode:  
+To activate your virtual environment in VSCode, just follow the traditional recipe:  
 - press Ctrl+Shift+P
 - in the menu that appears, search for  "Python: select interpreter"  and click on that option
 - wait a few seconds until a list of virtual environments is displayed  
