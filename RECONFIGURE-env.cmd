@@ -4,8 +4,8 @@
 @REM the console to use codepage 65001 below, via 'chcp'.  And WHY use UTF-8??
 @REM a) to maintain a single unique encoding standard for all scripts, avoiding eventual
 @REM    generation/modification in different encodings, causing problems (items b and c);
-@REM b) to guarantee that scripts created/edited in Notepad++ and VSCode in UTF-8
-@REM    correctly display any non-ASCII characters shown via 'echo';  
+@REM b) to ensure that scripts created/edited in Notepad++ and VSCode in UTF-8
+@REM    correctly display any non-ASCII characters printed via 'echo';  
 @REM c) to guarantee uniform and correct read/write of the 'last_path' file used ahead 
 @REM    as well as its reading in python (prevents MISINTERPRETING non-ASCII paths/file names). 
 @REM ********************************************************************************************
@@ -16,9 +16,28 @@
 
 @echo off
 setlocal enabledelayedexpansion
+
+:: Trick to get the ESC character to be used with ANSI escape codes
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
 @REM Use SCRIPTDIR throughout the code, instead of ~dp0, because if ~dp0 used AFTER a CD, then bad things happen 
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_NAME_WITH_PATH=%~f0"
+
+:: Checks if the absolute path of this folder contains the Powershell escape char or brackets: '`', '[' or ']'
+:: We can NOT allow that, because we use a powershell script ('RECONFIGURE-env.PS1') as the actual 
+:: engine to reconfigure the virtual environments, and that framework treats brackets as wildcards. 
+:: And using the escape char '`' to escape the '`' symbol would add more complexity.
+:: No simple solution was found to ensure correct escape of those 3 symbols in the .ps1 script.
+:: PS - We tested to escape the symbols with "`" and -LiteralPath in .ps1,  works for SOME cases, not for others.
+::      So, the use of  '['  or  ']'  and  '`'  in the path of the 'base' folder is now forbidden in PortablePython4Windows.
+echo "%SCRIPT_DIR%" | findstr /r "[\[\`\]]" >nul
+if %errorlevel% EQU 0 (
+    echo %ESC%[31m--- CRITICAL ERROR --- %ESC%[0m
+    echo The 'base' folder of this portable installation has symbol '`' or '[' or ']', which causes errors in PowerShell.
+    echo Please rename or move the folder to a directory that does NOT use these characters in the path name and try again.
+    goto FIM
+)
 
 @rem set GETCPCMD=powershell -NoProfile -Command "[Console]::OutputEncoding.CodePage"
 @rem set ARGSFOR=tokens=*
@@ -42,7 +61,7 @@ if [%MENU_SELECTED_SUBDIR%]==[] (goto FIM) else (set "_ENV_=%MENU_SELECTED_SUBDI
 set "THE_ENV_DIR=%SCRIPT_DIR%Envs\%_ENV_%"
 
 @echo Executing:   powershell -File RECONFIGURE-env.ps1 "%_ENV_%"
-powershell -ExecutionPolicy Bypass -WindowStyle Normal -File RECONFIGURE-env.ps1 "%_ENV_%"
+powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File RECONFIGURE-env.ps1 "%_ENV_%"
 if %errorlevel% NEQ 0 (echo ======    ERROR executing 'RECONFIGURE-env.ps1' & goto FIM) 
 
 @REM     ------ IMPORTANT -----

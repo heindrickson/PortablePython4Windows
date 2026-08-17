@@ -4,8 +4,8 @@
 @REM the console to use codepage 65001 below, via 'chcp'.  And WHY use UTF-8??
 @REM a) to maintain a single unique encoding standard for all scripts, avoiding eventual
 @REM    generation/modification in different encodings, causing problems (items b and c);
-@REM b) to guarantee that scripts created/edited in Notepad++ and VSCode in UTF-8
-@REM    correctly display any non-ASCII characters shown via 'echo';  
+@REM b) to ensure that scripts created/edited in Notepad++ and VSCode in UTF-8
+@REM    correctly display any non-ASCII characters printed via 'echo';  
 @REM c) to guarantee uniform and correct read/write of the 'last_path' file used ahead 
 @REM    as well as its reading in python (prevents MISINTERPRETING non-ASCII paths/file names). 
 @REM ********************************************************************************************
@@ -114,7 +114,7 @@ goto FIM
 @chcp %OLD_CP% >nul
 @echo.
 
-@REM Activate the '%_ENV_%' environment and REMAIN in the new 'cmd' prompt spawned
+@REM Activate the '%_ENV_%' environment and REMAIN in the spawned 'cmd' prompt 
 
 echo Check below if a title beginning with '*** PORTABLE Python ***' is displayed in white text on 
 echo a dark GREEN background. If so, then everything is OK: the '%_ENV_%' environment is active!
@@ -132,6 +132,12 @@ endlocal & set "Z_PARM1=%1" & set "Z_ENV_DIR=%THE_ENV_DIR%"
 ::      Besides, it must NOT be applyed to strings that are NOT surrounded by quotation marks.
 set "Z_ENV_DIR_ESCAPED=%Z_ENV_DIR:&=^&%"
 
+:: We also MUST escape the '(' and ')' chars that are eventually part of the path,
+:: whenever we use it inside CMD/C string  and inside blocks surrounded by these 2 chars !!
+set "Z_ENV_DIR_ESCAPED=%Z_ENV_DIR_ESCAPED:)=^)%"
+set "Z_ENV_DIR_ESCAPED=%Z_ENV_DIR_ESCAPED:(=^(%"
+echo.
+
 @REM Validate this CMD script's input parameter
 @REM If it was launched by the 'PyWinCMD-ActivateXxxx' shortcut, it will receive 'PWC' as the first parameter
 @if /I "%Z_PARM1%"=="PWC" (
@@ -140,7 +146,6 @@ set "Z_ENV_DIR_ESCAPED=%Z_ENV_DIR:&=^&%"
     @REM Notice that we do NOT need to use the restricted cmd /k in the line below:
     cmd /c " "%Z_ENV_DIR_ESCAPED%\Scripts\activate.bat" & python ".\src\pywincmd.py" "
 ) else (
-    @echo.
     @echo PS - If you get an error message saying that the command prompt is disabled, then run the 
     @echo      'PyWinCMD-Activate env.cmd' script instead [it always starts with an environment activated].
     cmd.exe /K " "%Z_ENV_DIR_ESCAPED%\Scripts\activate.bat" & python -c "exit" "

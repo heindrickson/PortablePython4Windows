@@ -4,8 +4,8 @@
 @REM the console to use codepage 65001 below, via 'chcp'.  And WHY use UTF-8??
 @REM a) to maintain a single unique encoding standard for all scripts, avoiding eventual
 @REM    generation/modification in different encodings, causing problems (items b and c);
-@REM b) to guarantee that scripts created/edited in Notepad++ and VSCode in UTF-8
-@REM    correctly display any non-ASCII characters shown via 'echo';  
+@REM b) to ensure that scripts created/edited in Notepad++ and VSCode in UTF-8
+@REM    correctly display any non-ASCII characters printed via 'echo';  
 @REM c) to guarantee uniform and correct read/write of the 'last_path' file used ahead 
 @REM    as well as its reading in python (prevents MISINTERPRETING non-ASCII paths/file names). 
 @REM ********************************************************************************************
@@ -17,9 +17,28 @@
 
 @echo off
 setlocal enabledelayedexpansion
+
+:: Trick to get the ESC character to be used with ANSI escape codes
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
 @REM Use SCRIPT_DIR throughout the code, instead of ~dp0, because if ~dp0 used AFTER a CD, then bad things happen 
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_NAME_WITH_PATH=%~f0"
+
+:: Checks if the absolute path of this folder contains the Powershell escape char or brackets: '`', '[' or ']'
+:: We can NOT allow that, because we use a powershell script ('RECONFIGURE-env.PS1') as the engine to eventually 
+:: reconfigure the virtual environments, and that framework treats brackets as wildcards. 
+:: And using the escape char '`' to escape the '`' symbol would add more complexity.
+:: No simple solution was found to ensure correct escape of those 3 symbols in the .ps1 script.
+:: PS - We tested to escape the symbols with "`" and -LiteralPath in .ps1,  works for SOME cases, not for others.
+::      So, the use of  '['  or  ']'  and  '`'  in the path of the 'base' folder is now forbidden in PortablePython4Windows.
+echo "%SCRIPT_DIR%" | findstr /r "[\[\`\]]" >nul
+if %errorlevel% EQU 0 (
+    echo %ESC%[31m--- CRITICAL ERROR --- %ESC%[0m
+    echo The 'base' folder of this portable installation has symbol '`' or '[' or ']', which causes errors in PowerShell.
+    echo Please rename or move the folder to a directory that does NOT use these characters in the path name and try again.
+    goto FIM
+)
 
 set "RET_CODE=0"
 
@@ -32,9 +51,6 @@ echo Original console encoding/codepage: %OLD_CP%
 @rem Change to UTF-8 codepage:
 chcp 65001
 echo.
-
-:: Trick to get the ESC character to be used with ANSI escape codes
-for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
 
 @rem Get the name of the virtual environment to create or use the name set in parameter 1
 set "_ENV_="
@@ -114,25 +130,27 @@ if exist "%THE_ENV_DIR%" rmdir /S /Q "%THE_ENV_DIR%"
 
 @echo.
 @echo Creating the virtual environment with name '%_ENV_%', please wait...
-"%PYTHON_FOLDER%\python.exe" -m virtualenv "%THE_ENV_DIR%" 
+"%PYTHON_FOLDER%\python.exe" -m virtualenv -q "%THE_ENV_DIR%"
 
 @REM     ------ IMPORTANT -----
 @REM We should ALWAYS copy the files 'env_startup.*' that are in the 'templates' folder 
 @REM of base path of our portable installation to the environment's Lib\site-packages folder !
-echo Executando o comando:  copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\site-packages" 
-cmd.exe /C copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\site-packages"
+copy /Y "%SCRIPT_DIR%\templates\env_startup.*" "%THE_ENV_DIR%\Lib\site-packages" 
 
 @REM Tests if the newly created %_ENV_% environment is actually working
 if not exist "%THE_ENV_DIR%\Scripts\python.exe" (
-    @echo %ESC%[31mERROR %ESC%[0m- python.exe was not found in %THE_ENV_DIR%\Scripts
+    REM Remember - ALWAYS put the directory variable inside quotation marks for 'echo' or... strange things can happen if name has '(', '&' or ')'
+    @echo %ESC%[31mERROR %ESC%[0m- python.exe was not found in "%THE_ENV_DIR%\Scripts"
     @echo The virtual environment '%_ENV_%' was NOT created correctly :(   Execution canceled!
     set "RET_CODE=888" & goto FIM
 )
+
 @REM Another test to check if the newly created %_ENV_% environment is working
 @REM ('call' executes the called script and KEEPS all variables set there,
 @REM  upon RETURNING to this console;  that is what we want):
 call "%THE_ENV_DIR%\Scripts\activate.bat"
 if "%VIRTUAL_ENV%" NEQ "%THE_ENV_DIR%" (
+    REM Remember - ALWAYS put the directory variable inside quotation marks for 'echo' or... strange things can happen if name has '(', '&' or ')'
     @echo %ESC%[31mERROR %ESC%[0m- When trying to activate the %_ENV_% environment with "%THE_ENV_DIR%\Scripts\activate.bat" 
     @echo The virtualenv '%_ENV_%' was NOT created correctly :[   Execution canceled!
     set "RET_CODE=888" & goto FIM
@@ -140,7 +158,7 @@ if "%VIRTUAL_ENV%" NEQ "%THE_ENV_DIR%" (
 
 @REM When a virtual environment is activated, just typing 'python' will pick up the virtual-env's executable
 
-@REM The call below runs sitecustomize.py and a title should appear in a DARK GREEN background:
+@REM The call below runs sitecustomize.py via the Env's python.exe, so a title should appear in a DARK GREEN background:
 python  -c "exit"   
 @REM But the call below does NOT show the title, hence the line above :( sitecustomize.py does NOT run):
 python --version   
@@ -185,3 +203,6 @@ python -m pip list
 @chcp %OLD_CP% >nul
 @pause
 exit /b %RET_CODE%
+
+
+
